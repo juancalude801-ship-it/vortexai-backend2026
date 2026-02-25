@@ -2,10 +2,10 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from app.config import DEFAULT_CITY, USE_SAMPLE_DATA
-from app.database import get_supabase
-from app.sources import get_sample_deals
-from app.scoring import calculate_mao, calculate_spread, score_deal
+from .config import DEFAULT_CITY, USE_SAMPLE_DATA
+from .database import get_supabase
+from .sources import get_sample_deals
+from .scoring import calculate_mao, calculate_spread, score_deal
 
 router = APIRouter()
 
@@ -30,7 +30,10 @@ def pull_deals(limit: int = 20, city: str = DEFAULT_CITY):
     sb = get_supabase()
 
     if not USE_SAMPLE_DATA:
-        raise HTTPException(status_code=400, detail="USE_SAMPLE_DATA is false, but RentCast pull is not implemented yet.")
+        raise HTTPException(
+            status_code=400,
+            detail="USE_SAMPLE_DATA is false, but RentCast pull is not implemented yet."
+        )
 
     raw = get_sample_deals(city=city)[:limit]
     inserted = 0
@@ -79,22 +82,27 @@ def pull_deals(limit: int = 20, city: str = DEFAULT_CITY):
 def list_leads(limit: int = 200, city: Optional[str] = DEFAULT_CITY, status: Optional[str] = None):
     sb = get_supabase()
     q = sb.table("sellers").select("*").order("created_at", desc=True).limit(limit)
+
     if city:
         q = q.eq("city", city)
     if status:
         q = q.eq("status", status)
+
     res = q.execute()
     return {"count": len(res.data or []), "leads": res.data or []}
 
 @router.post("/leads/{lead_id}/status")
 def update_lead_status(lead_id: str, body: StatusUpdate):
     sb = get_supabase()
+
     update = {"status": body.status}
     if body.notes is not None:
         update["notes"] = body.notes
+
     res = sb.table("sellers").update(update).eq("id", lead_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Lead not found")
+
     return {"updated": res.data[0]}
 
 @router.post("/buyers")
@@ -107,14 +115,17 @@ def create_buyer(body: BuyerCreate):
 def list_buyers(limit: int = 500, city: Optional[str] = DEFAULT_CITY):
     sb = get_supabase()
     q = sb.table("buyers").select("*").order("created_at", desc=True).limit(limit)
+
     if city:
         q = q.eq("city", city)
+
     res = q.execute()
     return {"count": len(res.data or []), "buyers": res.data or []}
 
 @router.post("/deals/{lead_id}/blast-buyers")
 def blast_buyers(lead_id: str, body: BlastRequest, city: str = DEFAULT_CITY):
-    """No email/SMS sending yet.
+    """
+    No email/SMS sending yet.
     This returns the lead + buyers list so you can copy/paste and send manually.
     """
     sb = get_supabase()
