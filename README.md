@@ -1,45 +1,45 @@
-# VortexAI Lite (Dallas-only) — FastAPI + Supabase + Railway
+# VortexAI Wholesale Engine (FastAPI + Supabase + RentCast + Brevo)
 
-This is a clean, minimal backend you can deploy to Railway and connect to Supabase.
+## What this does
+- Ingest listings from RentCast for configured markets
+- Score deals 0-100
+- Match deals to buyers by city/state + price range
+- Blast "Green" deals to matched buyers via Brevo
+- Deal room link with signed token
+- Contract PDF generator
+- Auto worker loop (runs every N seconds)
 
-You described:
-- Press a button → pull leads → show GREEN/ORANGE/RED
-- You call/email sellers yourself
-- When you have a deal, you pull your buyers list
-
-This repo gives you that *core* workflow.
-
-## 1) Create Supabase tables
-Open Supabase → SQL Editor → run:
-
-- `supabase/schema.sql`
-
-## 2) Set Railway Variables (or local .env)
-- `SUPABASE_URL`
-- `SUPABASE_KEY`  (recommended: **Service Role key** on Railway)
-- `USE_SAMPLE_DATA=true`
-- `DEFAULT_CITY=Dallas`
-
-## 3) Run locally
-```bash
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8080
-```
-
-## 4) Deploy to Railway
-- Push to GitHub
-- Railway → New Project → Deploy from GitHub
-- Add Variables above
-- It will run on port 8080
+## Deploy (Railway)
+1. Create Railway project
+2. Add Postgres (or use Supabase)
+3. Set environment variables in Railway:
+   - DATABASE_URL
+   - RENTCAST_API_KEY
+   - BREVO_API_KEY
+   - BREVO_SENDER_EMAIL
+   - BREVO_SENDER_NAME
+   - REPORT_EMAIL
+   - MARKETS
+   - AUTORUN_ENABLED
+   - AUTORUN_INTERVAL_SECONDS
+   - MIN_SCORE_TO_BLAST
+   - DEAL_ROOM_SECRET
+4. Deploy
 
 ## Endpoints
-- `GET /health`
-- `POST /pull-deals`  (inserts sample leads into Supabase with scoring)
-- `GET /leads?limit=200&status=new`
-- `POST /leads/{lead_id}/status` body: `{"status":"contacted","notes":"called"}`
-- `POST /buyers` body: `{"name":"Buyer A","phone":"+1...","city":"Dallas","zip_codes":"75201,75202","max_price":350000}`
-- `GET /buyers?city=Dallas`
-- `POST /deals/{lead_id}/blast-buyers` body: `{"message":"Deal summary here"}`
+- GET /health
+- POST /buyers
+- GET /buyers
+- POST /buyers/import-csv
+- POST /sellers/intake
+- POST /deals/ingest
+- GET /deals
+- POST /deals/{deal_id}/underwrite
+- POST /deals/{deal_id}/blast
+- GET /deal-room/{token}
+- POST /deals/{deal_id}/contract
 
-## Next step (after this runs)
-Replace the sample data generator in `app/sources.py` with your RentCast pull + filters.
+## Run locally
+cp .env.example .env
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8080
