@@ -1,10 +1,30 @@
-import os
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
+from pydantic import Field
 
-load_dotenv()
+class Settings(BaseSettings):
+    ENV: str = "dev"
+    APP_NAME: str = "VortexAI Wholesale"
+    BASE_URL: str = "http://localhost:8080"
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
+    DATABASE_URL: str
 
-USE_SAMPLE_DATA = os.getenv("USE_SAMPLE_DATA", "true").lower() in ("1", "true", "yes", "y")
-DEFAULT_CITY = os.getenv("DEFAULT_CITY", "Dallas").strip()
+    RENTCAST_API_KEY: str = ""
+    RENTCAST_BASE_URL: str = "https://api.rentcast.io/v1"
+
+    BREVO_API_KEY: str = ""
+    BREVO_SENDER_EMAIL: str = ""
+    BREVO_SENDER_NAME: str = "VortexAI Deals"
+    REPORT_EMAIL: str = ""
+
+    MARKETS: str = "Dallas,TX"
+    AUTORUN_ENABLED: bool = True
+    AUTORUN_INTERVAL_SECONDS: int = 900
+    MIN_SCORE_TO_BLAST: int = 75
+
+    DEAL_ROOM_SECRET: str = Field(default="change_me")
+
+    class Config:
+        env_file = ".env"
+        extra = "ignore"
+
+settings = Settings()
